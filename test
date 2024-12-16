@@ -208,3 +208,13 @@ const validation = {
     }
   },
 };
+
+document.querySelector('.personalDetailsForm').addEventListener('blur', (event) => {
+  if (
+    event.target.matches('input[type="text"]') || 
+    event.target.matches('input[type="tel"]') || 
+    event.target.matches('input[type="number"]')
+  ) {
+    validation.fieldValidate(event.target);
+  }
+}, true); 
