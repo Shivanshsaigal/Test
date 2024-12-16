@@ -1,0 +1,210 @@
+const validation = {
+  validateData: {},
+
+  fieldFormat: function (type, wrapper = document.querySelector('.wrapper')) {
+    if (isServer) {
+      const pData = new URLSearchParams({
+        ProductCode: productInfo.productCode,
+        Channel: productInfo.channel,
+        InsuredType: type,
+        Language: productInfo.langCode,
+      }).toString();
+
+      fetch(api_getFieldFormat, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: pData,
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.result === "success") {
+            validation.validateData[type] = data.response.fields;
+            validation.setupField(validation.validateData[type], wrapper);
+            document.querySelector(".getAQuote").classList.add("loaded");
+          }
+        })
+        .catch((err) => console.error("Error fetching field format:", err));
+    }
+  },
+
+  setupField: function (data, wrapper = document.querySelector('.wrapper')) {
+    data.forEach((field) => {
+      const description = field.description;
+      const fieldElements = wrapper.querySelectorAll(`[data-description="${description}"]`); // Select all matching elements
+
+      fieldElements.forEach((fieldElement) => {
+        // Handle 'required' attribute
+        if (field.mandatory === "N") {
+          fieldElement.removeAttribute("required");
+        }
+
+        // Handle 'data-fieldId' attribute
+        if (field.fieldId) {
+          fieldElement.setAttribute("data-fieldId", field.fieldId);
+        }
+
+        // Handle 'maxlength' attribute
+        if (field.length) {
+          fieldElement.setAttribute("maxlength", field.length);
+        }
+
+        // Handle dropdown options
+        if (field.options) {
+          const selectElements = wrapper.querySelectorAll(`select[data-description="${description}"]`);
+          selectElements.forEach((selectElement) => {
+            field.options.forEach((option) => {
+              const opt = document.createElement("option");
+              opt.value = option[0];
+              opt.textContent = option[1];
+              if (option[0] === "-1") {
+                opt.disabled = true;
+              }
+              selectElement.appendChild(opt);
+            });
+
+            // Disable dropdown if there's only one option
+            if (field.options.length === 1) {
+              selectElement.disabled = true;
+              selectElement.closest("div").classList.add("disabled");
+            }
+          });
+        }
+
+        // Special handling for district fields
+        if (description === "district") {
+          const districtSpan = wrapper.querySelector(`span[data-description="district"]`);
+          const districtSelect = wrapper.querySelector(`select[data-description="district"]`);
+          if (districtSpan && districtSelect) {
+            const districtCode = districtSpan.innerHTML.trim();
+            if (districtCode.length > 0) {
+              const districtOption = districtSelect.querySelector(`option[value="${districtCode}"]`);
+              if (districtOption) {
+                districtSpan.innerHTML = districtOption.innerHTML;
+              }
+            }
+          }
+        }
+
+        // Handle saved values
+        if (fieldElement.dataset.savedValue) {
+          const selectElements = wrapper.querySelectorAll(`select[data-description="${description}"]`);
+          selectElements.forEach((selectElement) => {
+            selectElement.value = fieldElement.dataset.savedValue;
+          });
+        }
+      });
+    });
+  },
+
+  fieldValidate: function (field) {
+    const str = field.value.trim();
+
+    if (field.dataset.fieldId && field.dataset.fieldId !== "8") {
+      if (isServer) {
+        const pData = new URLSearchParams({
+          ProductCode: productInfo.productCode,
+          Channel: productInfo.channel,
+          Language: productInfo.langCode,
+          FieldList: JSON.stringify([{ id: field.dataset.fieldId, value: str }]),
+        }).toString();
+
+        fetch(api_validateField, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: pData,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            const errorMsgContainer = field.closest("div").querySelector(".fieldErrorMsg");
+            if (errorMsgContainer) errorMsgContainer.remove();
+
+            if (data.result === "success") {
+              field.setAttribute("validated", "true");
+            } else if (data.result === "failed" && data.response) {
+              data.response.forEach((error) => {
+                if (field.dataset.fieldId === error.fieldId) {
+                  const errorMsg = document.createElement("div");
+                  errorMsg.classList.add("fieldErrorMsg");
+                  errorMsg.textContent = error.message;
+                  field.closest("div").appendChild(errorMsg);
+                  field.setAttribute("validated", "false");
+                }
+              });
+            }
+          })
+          .catch((err) => console.error("Error validating field:", err));
+      }
+    } else {
+      field.setAttribute("validated", "true");
+    }
+  },
+
+  validateField: function (wrapper = document.querySelector('.wrapper'), cb) {
+    if (isServer && allowAjax) {
+      allowAjax = false;
+
+      const pData = new URLSearchParams({
+        ProductCode: productInfo.productCode,
+        Channel: productInfo.channel,
+        Language: productInfo.langCode,
+      });
+
+      const inputs = wrapper.querySelectorAll("input, select");
+      inputs.forEach((input) => {
+        const value = input.value.trim();
+        if (input.dataset.fieldId && (input.hasAttribute("required") || value.length > 0)) {
+          let fieldValue = value;
+          if (input.dataset.fieldId === "8" && value.includes(" - ")) {
+            const dobParts = value.split(" - ");
+            fieldValue = `${dobParts[2]}/${dobParts[1]}/${dobParts[0]}`;
+          }
+          pData.append("FieldList", JSON.stringify({ id: input.dataset.fieldId, value: fieldValue }));
+        }
+      });
+
+      fetch(api_validateField, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: pData.toString(),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          inputs.forEach((input) => input.setAttribute("validated", "true"));
+          wrapper.querySelectorAll(".fieldErrorMsg").forEach((msg) => msg.remove());
+
+          let fieldValid = true;
+
+          if (data.result === "failed" && data.response) {
+            data.response.forEach((error) => {
+              const field = wrapper.querySelector(`[data-fieldId="${error.fieldId}"]`);
+              if (field) {
+                field.setAttribute("validated", "false");
+                const errorMsg = document.createElement("div");
+                errorMsg.classList.add("fieldErrorMsg");
+                errorMsg.textContent = error.message;
+                field.closest("div").appendChild(errorMsg);
+                fieldValid = false;
+              }
+            });
+          }
+
+          if (cb) {
+            if (cb === "pd") banner.drawResult(fieldValid);
+            else if (cb === "pi") selectAPlan.drawValidate(fieldValid);
+            else if (cb === "gaq") getAQuote.drawResult(fieldValid);
+            else if (cb === "cu") contactUs.drawResult(fieldValid);
+            else if (cb === "cf") confirmation.drawResult(fieldValid);
+          }
+
+          allowAjax = true;
+        })
+        .catch((err) => console.error("Error validating fields:", err));
+    }
+  },
+};
