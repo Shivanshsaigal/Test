@@ -218,3 +218,49 @@ document.querySelector('.personalDetailsForm').addEventListener('blur', (event) 
     validation.fieldValidate(event.target);
   }
 }, true); 
+
+
+
+
+
+function validateAgeInput(inputElement) {
+  const age = parseInt(inputElement.value.trim(), 10);
+
+  // Define age limits for different types
+  const ageLimits = {
+    PH: { min: 18, max: 80 }, // Primary Holder: 18-80 years
+    SP: { min: 18, max: 80 }, // Spouse: 18-80 years
+    CH: { min: 0, max: 17 },  // Child: 0-17 years
+  };
+
+  // Get the user type from the data attribute (e.g., 'PH', 'SP', 'CH')
+  const userType = inputElement.dataset.userType;
+
+  // Clear previous error message
+  const errorContainer = inputElement.closest('div').querySelector('.fieldErrorMsg');
+  if (errorContainer) errorContainer.remove();
+
+  // Validate the age against the limits
+  if (!ageLimits[userType]) {
+    console.error(`Unknown user type: ${userType}`);
+    return;
+  }
+
+  const { min, max } = ageLimits[userType];
+  if (isNaN(age) || age < min || age > max) {
+    const errorMsg = document.createElement('div');
+    errorMsg.classList.add('fieldErrorMsg');
+    errorMsg.textContent = `Age for ${userType} must be between ${min} and ${max} years.`;
+    inputElement.closest('div').appendChild(errorMsg);
+    inputElement.setAttribute('validated', 'false');
+  } else {
+    inputElement.setAttribute('validated', 'true');
+  }
+}
+
+document.querySelector('.personalDetailsForm').addEventListener('blur', (event) => {
+  if (event.target.matches('input[data-user-type]')) {
+    validateAgeInput(event.target);
+  }
+}, true);
+
