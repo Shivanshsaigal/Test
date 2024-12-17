@@ -264,3 +264,35 @@ document.querySelector('.personalDetailsForm').addEventListener('blur', (event) 
   }
 }, true);
 
+function validateRadioButtons(wrapper, fieldNames) {
+  let isValid = true;
+
+  fieldNames.forEach((name) => {
+    const options = wrapper.querySelectorAll(`input[name="${name}"]`);
+    const isChecked = Array.from(options).some((option) => option.checked);
+
+    // Clear previous error messages
+    const errorContainer = wrapper.querySelector(`.fieldErrorMsg[data-name="${name}"]`);
+    if (errorContainer) errorContainer.remove();
+
+    if (!isChecked) {
+      isValid = false;
+      // Add error message
+      const errorMsg = document.createElement('div');
+      errorMsg.classList.add('fieldErrorMsg');
+      errorMsg.setAttribute('data-name', name);
+      errorMsg.textContent = `${name.replace('-', ' ')} selection is required.`;
+      options[0].closest('div').appendChild(errorMsg);
+    }
+  });
+
+  return isValid;
+}
+const formWrapper = document.querySelector('.personalDetailsForm');
+const isValid = validateRadioButtons(formWrapper, ['gender', 'smoking-status']);
+
+if (isValid) {
+  console.log('All radio buttons are valid');
+} else {
+  console.log('Please complete all required selections.');
+}
