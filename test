@@ -296,3 +296,35 @@ if (isValid) {
 } else {
   console.log('Please complete all required selections.');
 }
+
+
+function validateRadioButtons(wrapper, fieldNames) {
+  let isValid = true;
+
+  fieldNames.forEach((name) => {
+    const options = wrapper.querySelectorAll(`input[name="${name}"][required]`); // Only validate if required
+    const isChecked = Array.from(options).some((option) => option.checked);
+
+    options.forEach((option) => {
+      // Clear previous error messages in the parent div
+      const parentDiv = option.closest('div');
+      const errorContainer = parentDiv.querySelector('.fieldErrorMsg');
+      if (errorContainer) errorContainer.remove();
+    });
+
+    if (!isChecked && options.length > 0) {
+      isValid = false;
+
+      // Add error message to the parent div of the first option
+      const errorMsg = document.createElement('div');
+      errorMsg.classList.add('fieldErrorMsg');
+      errorMsg.textContent = `${name.replace('-', ' ')} selection is required.`;
+
+      const parentDiv = options[0].closest('div');
+      parentDiv.appendChild(errorMsg);
+    }
+  });
+
+  return isValid;
+}
+
