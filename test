@@ -328,3 +328,63 @@ function validateRadioButtons(wrapper, fieldNames) {
   return isValid;
 }
 
+
+function submitQuoteRequest(formWrapper) {
+  // Prepare data
+  const formData = {};
+  const inputs = formWrapper.querySelectorAll('input, select');
+
+  inputs.forEach((input) => {
+    const key = input.name || input.id; // Use `name` or `id` as key
+    const value = input.type === 'radio' ? (input.checked ? input.value : null) : input.value;
+
+    if (value) {
+      formData[key] = value;
+    }
+  });
+
+  // Check if mandatory fields are complete
+  const mandatoryFields = formWrapper.querySelectorAll('[required]');
+  let isValid = true;
+
+  mandatoryFields.forEach((field) => {
+    if (!field.value.trim()) {
+      isValid = false;
+      field.classList.add('fieldError');
+    } else {
+      field.classList.remove('fieldError');
+    }
+  });
+
+  if (!isValid) {
+    alert('Please fill all required fields before submitting.');
+    return;
+  }
+
+  // Send Quote Request via Fetch
+  fetch('https://api.example.com/submitQuote', { // Replace with actual API endpoint
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(formData),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.result === 'success') {
+        alert('Quote submitted successfully!');
+        console.log('Response:', data);
+      } else {
+        alert('Failed to submit quote. Please try again.');
+      }
+    })
+    .catch((error) => {
+      console.error('Error submitting quote:', error);
+      alert('An error occurred. Please try again later.');
+    });
+}
+document.querySelector('#submitQuoteBtn').addEventListener('click', () => {
+  const formWrapper = document.querySelector('.personalDetailsForm');
+  submitQuoteRequest(formWrapper);
+});
+
