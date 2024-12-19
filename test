@@ -605,3 +605,47 @@ submitMember: function () {
 document.querySelector('.submit-member-button').addEventListener('click', () => {
   getAQuote.submitMember();
 });
+
+
+class CustomElement extends HTMLElement {
+  constructor() {
+    super();
+
+    // Attach Shadow DOM
+    this.attachShadow({ mode: 'open' });
+
+    // Create a button inside the Shadow DOM
+    const button = document.createElement('button');
+    button.textContent = 'Toggle Attributes';
+    this.shadowRoot.appendChild(button);
+
+    // Attach event listener to the button
+    button.addEventListener('click', this.toggleAttributes.bind(this));
+  }
+
+  // Function to toggle class and attributes
+  toggleAttributes() {
+    // Add or remove a class on the custom tag in the Light DOM
+    if (this.classList.contains('active')) {
+      this.classList.remove('active');
+    } else {
+      this.classList.add('active');
+    }
+
+    // Find all input fields in the Light DOM
+    const inputFields = this.querySelectorAll('input');
+
+    // Add or remove the 'required' attribute
+    inputFields.forEach((input) => {
+      if (input.hasAttribute('required')) {
+        input.removeAttribute('required');
+      } else {
+        input.setAttribute('required', '');
+      }
+    });
+  }
+}
+
+// Define the custom element
+customElements.define('custom-element', CustomElement);
+
