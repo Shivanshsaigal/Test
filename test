@@ -578,3 +578,30 @@ drawResult: function (fieldValid) {
   }
 }
 
+
+submitMember: function () {
+  const formWrapper = document.querySelector('.personalDetailsForm');
+
+  // Step 1: Validate fields (radio buttons, age, and general fields)
+  const fieldNamesToValidate = ['gender', 'smoking-status']; // Radio field names
+  const isRadioValid = validateRadioButtons(formWrapper, fieldNamesToValidate);
+  const isAgeValid = validateAgeFields(formWrapper);
+  const isFieldValid = validateGeneralFields(formWrapper);
+
+  // Step 2: Check overall validity
+  getAQuote.valid = isRadioValid && isAgeValid && isFieldValid;
+
+  // Step 3: Draw result for the validation
+  getAQuote.drawResult(getAQuote.valid);
+
+  if (getAQuote.valid) {
+    console.log('Form submission successful!');
+    // Additional submission logic can go here
+  } else {
+    console.log('Form validation failed.');
+  }
+}
+
+document.querySelector('.submit-member-button').addEventListener('click', () => {
+  getAQuote.submitMember();
+});
