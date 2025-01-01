@@ -649,3 +649,73 @@ class CustomElement extends HTMLElement {
 // Define the custom element
 customElements.define('custom-element', CustomElement);
 
+function fetchProductPrices(dob, smoker, planLevels) {
+  // Validate inputs
+  if (!dob || !smoker) {
+    console.error("Both DOB and smoking option are required.");
+    return;
+  }
+
+  // Prepare common payload parameters
+  const commonPayload = {
+    ProductCode: "YOUR_PRODUCT_CODE", // Replace with actual ProductCode
+    Channel: "YOUR_CHANNEL",         // Replace with actual Channel
+    Gender: "YOUR_GENDER",           // Replace dynamically if required
+    DOB: dob,
+    Smoker: smoker,
+    InsuredTypeCombo: "YOUR_COMBO",  // Replace dynamically if required
+    InsuredTypeQuote: "YOUR_QUOTE"   // Replace dynamically if required
+  };
+
+  // Loop through plan levels
+  planLevels.forEach((planLevel) => {
+    // Add PlanLevel to payload
+    const payload = {
+      ...commonPayload,
+      PlanLevel: planLevel
+    };
+
+    // Convert payload to URL-encoded string
+    const encodedPayload = new URLSearchParams(payload).toString();
+
+    // Fetch prices for the current PlanLevel
+    fetch("YOUR_API_ENDPOINT", { // Replace with your API endpoint
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: encodedPayload
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.result === "success") {
+          console.log(`Prices for ${planLevel}:`, data.response);
+          updateProductCard(planLevel, data.response); // Update card UI with response
+        } else {
+          console.error(`Failed to fetch prices for ${planLevel}:`, data.error);
+        }
+      })
+      .catch((error) => {
+        console.error(`Error fetching prices for ${planLevel}:`, error);
+      });
+  });
+}
+
+// Function to update product card based on response
+function updateProductCard(planLevel, response) {
+  const card = document.querySelector(`.product-card[data-plan-level="${planLevel}"]`);
+  if (card) {
+    card.querySelector(".price").textContent = `Price: ${response.price}`; // Example: Update price
+  } else {
+    console.error(`Card not found for PlanLevel: ${planLevel}`);
+  }
+}
+
+// Example Usage
+document.querySelector(".submit-button").addEventListener("click", () => {
+  const dob = document.querySelector("#dob-input").value; // Replace with actual selector
+  const smoker = document.querySelector(".smoking-option.selected")?.getAttribute("data-value"); // Replace with actual selector
+  const planLevels = ["Plan1", "Plan2", "Plan3"]; // Example: Replace with actual PlanLevel values
+
+  fetchProductPrices(dob, smoker, planLevels);
+});
