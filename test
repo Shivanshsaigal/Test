@@ -719,3 +719,24 @@ document.querySelector(".submit-button").addEventListener("click", () => {
 
   fetchProductPrices(dob, smoker, planLevels);
 });
+
+
+function getCookieValue(name){
+    const nameEQ = `${name}=`;
+    const cookies = document.cookie.split(';');
+
+    for (const cookie of cookies) {
+        let c = cookie.trim();
+        if (c.startsWith(nameEQ)) {
+            return c.substring(nameEQ.length);
+        }
+    }
+
+    return null;
+}
+
+				pData.GATRACKID = 'G-PXHD7BL03K'; // Static GA Tracking ID
+				pData.GACLIENTID = String(getCookieValue('_ga')).substring(6);
+				pData.GASource = utm.findGetParameter('utm_source');
+		        pData.GAMedium = utm.findGetParameter('utm_medium');
+		        pData.GACampaign = utm.findGetParameter('utm_campaign');
