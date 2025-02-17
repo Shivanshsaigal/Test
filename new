@@ -1,0 +1,87 @@
+import { LitElement, html, css } from 'lit';
+import { customElement, property, state } from 'lit/decorators.js';
+
+@customElement('base-filter')
+export class BaseFilter extends LitElement {
+  @state() selectedYear = '';
+  @state() filteredCards = [];
+  @state() layoutMode = '3'; // Default mode: 3 cards per item
+  @state() noOfSlides = 0; // Number of carousel items
+
+  static styles = css`
+    :host {
+      display: block;
+    }
+    select {
+      margin-bottom: 10px;
+      padding: 5px;
+    }
+  `;
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.updateFilteredCards();
+    window.addEventListener('resize', this.updateLayoutMode.bind(this));
+    this.updateLayoutMode(); // Initialize mode based on screen size
+  }
+
+  disconnectedCallback() {
+    window.removeEventListener('resize', this.updateLayoutMode.bind(this));
+    super.disconnectedCallback();
+  }
+
+  updateLayoutMode() {
+    const screenWidth = window.innerWidth;
+    if (screenWidth < 768) {
+      this.layoutMode = '1'; // Mobile mode
+    } else {
+      this.layoutMode = this.filteredCards.length < 4 ? '3' : '6';
+    }
+    this.requestUpdate();
+  }
+
+  updateFilteredCards() {
+    const allCards = Array.from(this.parentElement.querySelectorAll('icon-cards'));
+    this.filteredCards = allCards.filter(card => 
+      !this.selectedYear || card.getAttribute('year') === this.selectedYear
+    );
+    this.updateLayoutMode();
+    this.noOfSlides = Math.ceil(this.filteredCards.length / (this.layoutMode === '6' ? 6 : this.layoutMode === '3' ? 3 : 1));
+  }
+
+  handleFilterChange(event) {
+    this.selectedYear = event.target.value;
+    this.updateFilteredCards();
+  }
+
+  renderCarouselItems() {
+    let groupedCards = [];
+    const chunkSize = this.layoutMode === '6' ? 6 : this.layoutMode === '3' ? 3 : 1;
+    
+    for (let i = 0; i < this.filteredCards.length; i += chunkSize) {
+      groupedCards.push(this.filteredCards.slice(i, i + chunkSize));
+    }
+
+    return groupedCards.map(group => html`
+      <div slot="carousel-item">
+        ${group.map(card => html`${card.cloneNode(true)}`)}
+      </div>
+    `);
+  }
+
+  firstUpdated() {
+    const selectElement = this.querySelector('select[slot="filter-controls"]');
+    if (selectElement) {
+      selectElement.addEventListener('change', this.handleFilterChange.bind(this));
+    }
+  }
+
+  render() {
+    return html`
+      <slot name="filter-controls"></slot> <!-- Light DOM slot for select dropdown -->
+      <base-carousel slot="filter-display" .noOfSlides=${this.noOfSlides}>
+        ${this.renderCarouselItems()}
+      </base-carousel>
+    `;
+  }
+}
