@@ -1,12 +1,12 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { customElement, state } from 'lit/decorators.js';
 
 @customElement('base-filter')
 export class BaseFilter extends LitElement {
-  @state() selectedYear = '';
-  @state() filteredCards = [];
-  @state() layoutMode = '3'; // Default mode: 3 cards per item
-  @state() noOfSlides = 0; // Number of carousel items
+  @state() selectedYear: string = '';
+  @state() filteredCards: HTMLElement[] = [];
+  @state() layoutMode: string = '3'; // Default mode: 3 cards per item
+  @state() noOfSlides: number = 0; // Number of carousel items
 
   static styles = css`
     :host {
@@ -18,19 +18,19 @@ export class BaseFilter extends LitElement {
     }
   `;
 
-  connectedCallback() {
+  connectedCallback(): void {
     super.connectedCallback();
     this.updateFilteredCards();
     window.addEventListener('resize', this.updateLayoutMode.bind(this));
     this.updateLayoutMode(); // Initialize mode based on screen size
   }
 
-  disconnectedCallback() {
+  disconnectedCallback(): void {
     window.removeEventListener('resize', this.updateLayoutMode.bind(this));
     super.disconnectedCallback();
   }
 
-  updateLayoutMode() {
+  updateLayoutMode(): void {
     const screenWidth = window.innerWidth;
     if (screenWidth < 768) {
       this.layoutMode = '1'; // Mobile mode
@@ -40,8 +40,11 @@ export class BaseFilter extends LitElement {
     this.requestUpdate();
   }
 
-  updateFilteredCards() {
-    const allCards = Array.from(this.parentElement.querySelectorAll('icon-cards'));
+  updateFilteredCards(): void {
+    const parent = this.parentElement;
+    if (!parent) return;
+    
+    const allCards = Array.from(parent.querySelectorAll('icon-cards')) as HTMLElement[];
     this.filteredCards = allCards.filter(card => 
       !this.selectedYear || card.getAttribute('year') === this.selectedYear
     );
@@ -49,13 +52,14 @@ export class BaseFilter extends LitElement {
     this.noOfSlides = Math.ceil(this.filteredCards.length / (this.layoutMode === '6' ? 6 : this.layoutMode === '3' ? 3 : 1));
   }
 
-  handleFilterChange(event) {
-    this.selectedYear = event.target.value;
+  handleFilterChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.selectedYear = target.value;
     this.updateFilteredCards();
   }
 
   renderCarouselItems() {
-    let groupedCards = [];
+    let groupedCards: HTMLElement[][] = [];
     const chunkSize = this.layoutMode === '6' ? 6 : this.layoutMode === '3' ? 3 : 1;
     
     for (let i = 0; i < this.filteredCards.length; i += chunkSize) {
@@ -69,8 +73,8 @@ export class BaseFilter extends LitElement {
     `);
   }
 
-  firstUpdated() {
-    const selectElement = this.querySelector('select[slot="filter-controls"]');
+  firstUpdated(): void {
+    const selectElement = this.querySelector('select[slot="filter-controls"]') as HTMLSelectElement | null;
     if (selectElement) {
       selectElement.addEventListener('change', this.handleFilterChange.bind(this));
     }
