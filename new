@@ -72,6 +72,14 @@ export class BaseFilter extends LitElement {
       </div>
     `);
   }
+  updateAllCards(): void {
+    const parent = this.parentElement;
+    if (!parent) return;
+    
+    this.filteredCards = Array.from(parent.querySelectorAll('icon-cards')) as HTMLElement[];
+    this.updateLayoutMode();
+    this.noOfSlides = Math.ceil(this.filteredCards.length / (this.layoutMode === '6' ? 6 : this.layoutMode === '3' ? 3 : 1));
+  }
 
   firstUpdated(): void {
     const selectElement = this.querySelector('select[slot="filter-controls"]') as HTMLSelectElement | null;
@@ -89,3 +97,4 @@ export class BaseFilter extends LitElement {
     `;
   }
 }
+
