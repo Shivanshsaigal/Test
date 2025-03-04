@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const sections = document.querySelectorAll("[data-section]");
-  const menuItems = document.querySelectorAll("#menu li");
+  const sections: NodeListOf<HTMLElement> = document.querySelectorAll("[data-section]");
+  const menuItems: NodeListOf<HTMLLIElement> = document.querySelectorAll("#menu li");
 
   // **1️⃣ Scroll-based Highlighting using Intersection Observer**
   const observer = new IntersectionObserver(
@@ -9,13 +9,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (entry.isIntersecting) {
           const sectionId = entry.target.getAttribute("data-section");
 
-          // Remove active class from all menu items
-          menuItems.forEach((item) => item.classList.remove("active"));
+          if (sectionId) {
+            menuItems.forEach((item) => item.classList.remove("active"));
 
-          // Add active class to the matching menu item
-          const activeItem = document.querySelector(`#menu li[data-section="${sectionId}"]`);
-          if (activeItem) {
-            activeItem.classList.add("active");
+            const activeItem = document.querySelector(`#menu li[data-section="${sectionId}"]`) as HTMLLIElement | null;
+            if (activeItem) {
+              activeItem.classList.add("active");
+            }
           }
         }
       });
@@ -30,14 +30,16 @@ document.addEventListener("DOMContentLoaded", () => {
   menuItems.forEach((item) => {
     item.addEventListener("click", (event) => {
       const sectionId = item.getAttribute("data-section");
-      const section = document.getElementById(sectionId);
-      
-      if (section) {
-        section.scrollIntoView({ behavior: "smooth", block: "start" });
 
-        // Optional: Manually update the active class
-        menuItems.forEach((item) => item.classList.remove("active"));
-        item.classList.add("active");
+      if (sectionId) {
+        const section = document.getElementById(sectionId);
+        if (section) {
+          section.scrollIntoView({ behavior: "smooth", block: "start" });
+
+          // Optional: Manually update the active class
+          menuItems.forEach((item) => item.classList.remove("active"));
+          item.classList.add("active");
+        }
       }
     });
   });
