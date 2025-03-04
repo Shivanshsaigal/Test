@@ -1,13 +1,25 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const sections: NodeListOf<HTMLElement> = document.querySelectorAll("[data-section]");
+  console.log("✅ DOM fully loaded");
+
+  // Select all elements with `data-section`, EXCEPT `<li>`
+  const sections: NodeListOf<HTMLElement> = document.querySelectorAll("[data-section]:not(li)");
   const menuItems: NodeListOf<HTMLLIElement> = document.querySelectorAll("#menu li");
 
-  // **1️⃣ Scroll-based Highlighting using Intersection Observer**
+  if (sections.length === 0 || menuItems.length === 0) {
+    console.error("❌ Sections or menu items not found!");
+    return;
+  }
+
+  console.log("✅ Sections found:", sections.length);
+  console.log("✅ Menu items found:", menuItems.length);
+
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           const sectionId = entry.target.getAttribute("data-section");
+
+          console.log(`👀 ${sectionId} is in view`);
 
           if (sectionId) {
             menuItems.forEach((item) => item.classList.remove("active"));
@@ -15,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const activeItem = document.querySelector(`#menu li[data-section="${sectionId}"]`) as HTMLLIElement | null;
             if (activeItem) {
               activeItem.classList.add("active");
+              console.log(`✅ Active section: ${sectionId}`);
             }
           }
         }
@@ -23,51 +36,23 @@ document.addEventListener("DOMContentLoaded", () => {
     { rootMargin: "-50% 0px -50% 0px", threshold: 0.5 }
   );
 
-  // Observe all sections
   sections.forEach((section) => observer.observe(section));
 
-  // **2️⃣ Smooth Scroll to Section on Click**
   menuItems.forEach((item) => {
-    item.addEventListener("click", (event) => {
+    item.addEventListener("click", () => {
       const sectionId = item.getAttribute("data-section");
 
       if (sectionId) {
-        const section = document.getElementById(sectionId);
+        const section = document.querySelector(`[data-section="${sectionId}"]:not(li)`) as HTMLElement | null;
         if (section) {
           section.scrollIntoView({ behavior: "smooth", block: "start" });
 
-          // Optional: Manually update the active class
           menuItems.forEach((item) => item.classList.remove("active"));
           item.classList.add("active");
         }
       }
     });
   });
+
+  console.log("✅ Script initialized successfully.");
 });
-
-
-observeSections() {
-    const sections = document.querySelectorAll("[data-section]");
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            this.activeSection = entry.target.getAttribute("data-section") || "";
-            this.requestUpdate();
-          }
-        }
-      },
-      { rootMargin: "-50% 0px -50% 0px", threshold: 0.5 }
-    );
-
-    sections.forEach((section) => observer.observe(section));
-  }
-
-  scrollToSection(sectionId: string) {
-    const section = document.getElementById(sectionId);
-    if (section) {
-      section.scrollIntoView({ behavior: "smooth", block: "start" });
-      this.activeSection = sectionId;
-    }
-  }
