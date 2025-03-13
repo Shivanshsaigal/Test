@@ -122,3 +122,130 @@ export class BaseFilter extends LitElement {
     `;
   }
 }
+
+
+import { LitElement, html, css } from 'lit';
+import { customElement, state, queryAssignedElements } from 'lit/decorators.js';
+
+@customElement('base-filter')
+export class BaseFilter extends LitElement {
+  @state() selectedYear: string = '';
+  @state() filteredCards: HTMLElement[] = [];
+  @state() layoutMode: string = '3'; // Default mode: 3 cards per row
+  @state() noOfSlides: number = 0; // Number of carousel items
+
+  @queryAssignedElements({ slot: 'filter-controls' }) filterButtons!: NodeListOf<HTMLButtonElement>;
+
+  static styles = css`
+    :host {
+      display: block;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .col-md-4 {
+      flex: 0 0 33.33%;
+      max-width: 33.33%;
+      padding: 10px;
+    }
+    .active {
+      background-color: #007bff;
+      color: white;
+    }
+  `;
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.updateAllCards(); // Ensure all cards are shown initially
+    window.addEventListener('resize', this.updateLayoutMode.bind(this));
+    this.updateLayoutMode(); // Initialize mode based on screen size
+  }
+
+  disconnectedCallback(): void {
+    window.removeEventListener('resize', this.updateLayoutMode.bind(this));
+    super.disconnectedCallback();
+  }
+
+  updateLayoutMode(): void {
+    const screenWidth = window.innerWidth;
+    if (screenWidth < 768) {
+      this.layoutMode = '1'; // Mobile mode
+    } else if (this.layoutMode !== '6' || this.filteredCards.length < 6) {
+      this.layoutMode = '3'; // Default to 3 if not explicitly set to 6
+    }
+    this.requestUpdate();
+  }
+
+  updateAllCards(): void {
+    const parent = this.parentElement;
+    if (!parent) return;
+    
+    this.filteredCards = Array.from(parent.querySelectorAll('icon-cards')) as HTMLElement[];
+    this.updateLayoutMode();
+    this.updateNoOfSlides();
+  }
+
+  updateFilteredCards(): void {
+    const parent = this.parentElement;
+    if (!parent) return;
+    
+    const allCards = Array.from(parent.querySelectorAll('icon-cards')) as HTMLElement[];
+    this.filteredCards = allCards.filter(card => 
+      !this.selectedYear || card.getAttribute('year') === this.selectedYear
+    );
+    this.updateLayoutMode();
+    this.updateNoOfSlides();
+  }
+
+  updateNoOfSlides(): void {
+    const chunkSize = this.layoutMode === '6' ? 6 : 3;
+    this.noOfSlides = Math.ceil(this.filteredCards.length / chunkSize);
+  }
+
+  handleFilterChange(event: Event): void {
+    const target = event.target as HTMLButtonElement;
+    this.selectedYear = target.dataset.year || '';
+    
+    // Ensure only one button is active at a time
+    this.filterButtons.forEach(btn => btn.classList.remove('active'));
+    target.classList.add('active');
+    
+    this.updateFilteredCards();
+  }
+
+  renderCarouselItems() {
+    let groupedCards: HTMLElement[][] = [];
+    const chunkSize = this.layoutMode === '6' ? 6 : 3;
+    
+    for (let i = 0; i < this.filteredCards.length; i += chunkSize) {
+      groupedCards.push(this.filteredCards.slice(i, i + chunkSize));
+    }
+
+    return groupedCards.map(group => html`
+      <div slot="carousel-item">
+        <div class="row">
+          ${group.map(card => html`
+            <div class="col-md-4">${card.cloneNode(true)}</div>
+          `)}
+        </div>
+      </div>
+    `);
+  }
+
+  firstUpdated(): void {
+    this.filterButtons.forEach(button => {
+      button.addEventListener('click', this.handleFilterChange.bind(this));
+    });
+    this.updateAllCards(); // Ensure all cards are displayed on initial load
+  }
+
+  render() {
+    return html`
+      <slot name="filter-controls"></slot> <!-- Light DOM slot for filter buttons -->
+      <base-carousel slot="filter-display" .noOfSlides=${this.noOfSlides}>
+        ${this.renderCarouselItems()}
+      </base-carousel>
+    `;
+  }
+}
