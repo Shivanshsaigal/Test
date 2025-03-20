@@ -95,3 +95,36 @@ async function submitForm() {
 }
 
 document.getElementById("submitButton")?.addEventListener("click", submitForm);
+
+
+async function submitForm() {
+    const form = document.getElementById("myForm") as HTMLFormElement;
+    
+    if (!form) {
+        alert("Form not found!");
+        return;
+    }
+
+    const queryString = new URLSearchParams(new FormData(form)).toString();
+    const url = `https://www.cigna.com.hk/eSalesHKWS/ContactMe.do?${queryString}`;
+
+    try {
+        const response = await fetch(url, {
+            method: "GET"
+        });
+
+        const result = await response.json();
+        
+        if (result.status === "success") {
+            alert("Form submitted successfully!");
+        } else {
+            alert("Error submitting form. Please try again.");
+        }
+    } catch (error) {
+        alert("Network error. Please check your connection.");
+        console.error("Submission Error:", error);
+    }
+}
+
+document.getElementById("submitButton")?.addEventListener("click", submitForm);
+
